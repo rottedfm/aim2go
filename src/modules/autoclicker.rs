@@ -7,6 +7,9 @@ use std::{
     thread,
     time::Duration,
 };
+enigo::{
+    Enigo,
+}
 
 pub struct AutoClickerProcess {
     cps: i8,
@@ -23,7 +26,6 @@ impl AutoClickerProcess {
             range,
             cps,
             button: button.to_string(),
-            config,
             pid_file: "/tmp/autoclicker_process.pid".to_string(),
             running: Arc::new(Mutex::new(false)),
         }
@@ -44,7 +46,14 @@ impl AutoClickerProcess {
         thread::spawn(move || {
             *running_clone.lock().unwrap() = true;
             while *running_clone.lock().unwrap() {
-                println!("Logic")
+                // Autoclicker logic
+                let mut enigo = Enigo::new(&Settings::default()).unwrap();
+
+                // Make auto clicker here
+                // if config use config settings else
+                // use cps to set the clicks persecond
+                // else if the range value is persent use it to make a random range to make autoclicking look more human
+                // else if button match RMB or LMB for mouse buttons 
             }
             println!("AutoClicker stopped.")
         });
