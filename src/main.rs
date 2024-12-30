@@ -1,22 +1,28 @@
-use std::io;
-
+use clap::Parser;
 use ratatui::{backend::CrosstermBackend, Terminal};
+use std::io;
 
 use crate::{
     app::{App, AppResult},
+    cli::Cli,
     event::{Event, EventHandler},
     handler::handle_key_events,
     tui::Tui,
 };
 
 pub mod app;
+pub mod cli;
 pub mod event;
 pub mod handler;
+pub mod modules;
 pub mod tui;
 pub mod ui;
 
 #[tokio::main]
 async fn main() -> AppResult<()> {
+    // Parse cli args
+    let cli = Cli::parse();
+
     // Create an application.
     let mut app = App::new();
 
