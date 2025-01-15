@@ -18,8 +18,7 @@ pub fn render(app: &mut App, frame: &mut Frame) {
             "This is a tui template.\n\
                 Press `Esc`, `Ctrl-C` or `q` to stop running.\n\
                 Press left and right to increment and decrement the counter respectively.\n\
-                Counter: {}",
-            app.counter
+                Counte"
         ))
         .block(
             Block::bordered()
