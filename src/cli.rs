@@ -27,6 +27,7 @@ pub struct Cli {
 	/// Lists avalible games
 	#[arg(short, long)]
 	pub list: bool,
+
 }
 
 #[derive(Subcommand)]

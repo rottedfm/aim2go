@@ -2,7 +2,7 @@ use std::io;
 use clap::Parser;
 use ratatui::{backend::CrosstermBackend, Terminal};
 
-use aim2go::{check_and_delete_directory, create_directory, check_requirements};
+use aim2go::{check_and_delete_directory, create_directory, check_requirements, select_window};
 
 use crate::{
     app::{App, AppResult},
@@ -30,45 +30,48 @@ async fn main() -> AppResult<()> {
 
     match &cli.command {
         Some(Commands::New { game }) => {
-            if let Err(e) = create_directory(game) {
+            if let Err(e) = create_directory(&game).await {
                 eprintln!("Error creating directory '{}': {}", game, e);
             }
         }
         Some(Commands::Remove { game }) => {
-            if let Err(e) = check_and_delete_directory(game) {
+            if let Err(e) = check_and_delete_directory(&game).await {
                 eprintln!("Error removing directory '{}': {}", game, e);
             }
         }
         Some(Commands::Edit { game }) => {
             println!("Editing game '{}'", game);
-            let mut _app = App::new(game, true);
+            let mut _app = App::new(&game, true, "editing", 32);
         }
         Some(Commands::Attach { game }) => {
-            if check_requirements(game) {
-                let mut app = App::new(game, false);
+            if check_requirements(&game) {
+               
+		if let Some(selected_window) = select_window() {
+			let mut app = App::new(&game, false, &selected_window, 32);
+			
+			let stdout = io::stdout();
+			let backend = CrosstermBackend::new(stdout);
+			let terminal = Terminal::new(backend)?;
+			let events = EventHandler::new(250);
+			let mut tui = Tui::new(terminal, events);
 
-                // Terminal setup
-                let stdout = io::stdout();
-                let backend = CrosstermBackend::new(stdout);
-                let terminal = Terminal::new(backend)?;
-                let events = EventHandler::new(250);
-                let mut tui = Tui::new(terminal, events);
+			// Initialize TUI
+			if let Err(e) = tui.init() {
+				eprintln!("Failed to initialize TUI: {}", e);
+				return Err(e);
+			}
+			
+			// Start main loop
+			let result = run_tui(&mut tui, &mut app).await;
 
-                // Initialize TUI
-                if let Err(e) = tui.init() {
-                    eprintln!("Failed to initialize TUI: {}", e);
-                    return Err(e);
-                }
+			// Exit TUI gracefully
+			if let Err(e) = tui.exit() {
+				eprintln!("Failed to exit TUI: {}", e);
+			}
+	
+			result?;
+		}
 
-                // Start main loop
-                let result = run_tui(&mut tui, &mut app).await;
-
-                // Exit TUI gracefully
-                if let Err(e) = tui.exit() {
-                    eprintln!("Failed to exit TUI: {}", e);
-                }
-
-                result?;
             } else {
                 println!("The specified game is missing required components. Please check and try again.");
             }
