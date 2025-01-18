@@ -42,11 +42,6 @@ pub enum Commands {
 	   game: String,
         },
 
-	/// Edits config for a game
-	Edit {
-	   game: String,
-  	}, 
-
 	/// Attaches to a game
 	Attach {
 	   game: String,

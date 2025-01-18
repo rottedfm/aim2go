@@ -8,12 +8,18 @@ edition = "2021"
 [dependencies]
 chrono = "0.4.39"
 clap = { version = "4.5.26", features = ["derive"] }
+cliclack = "0.3.5"
+console = { version = "0.15.10", features = ["windows-console-colors"] }
 crossterm = { version = "0.28.1", features = ["event-stream"] }
-dialoguer = "0.11.0"
-dirs = "6.0.0"
+ctrlc = "3.4.5"
 futures = "0.3.31"
+image = "0.25.5"
+imageproc = "0.25.0"
 indicatif = "0.17.9"
 ratatui = "0.29.0"
+serde = { version = "1.0.217", features = ["derive"] }
+serde_yaml = "0.9.34"
 tokio = { version = "1.40.0", features = ["full"] }
 winapi = { version = "0.3.9", features = ["winuser"] }
 xcap = "0.2.2"
+yolo-rs = "0.1.1"

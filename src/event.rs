@@ -1,8 +1,10 @@
 use std::time::Duration;
-
 use crossterm::event::{Event as CrosstermEvent, KeyEvent, MouseEvent};
 use futures::{FutureExt, StreamExt};
 use tokio::sync::mpsc;
+use winapi::um::winuser::{GetAsyncKeyState, VK_ESCAPE, VK_SHIFT};
+use tokio::sync::mpsc::UnboundedSender;
+
 
 use crate::app::AppResult;
 
@@ -17,6 +19,10 @@ pub enum Event {
     Mouse(MouseEvent),
     /// Terminal resize.
     Resize(u16, u16),
+    /// Global key press via Windows API
+    GlobalKey(u32),
+    // Global mouse button press via Windows API
+    // GlobalMouse(u32),
 }
 
 /// Terminal event handler.
@@ -50,6 +56,12 @@ impl EventHandler {
                   _ = tick_delay => {
                     _sender.send(Event::Tick).unwrap();
                   }
+
+
+
+		  // Check global key and mouse inputs
+        	  _ = async { Self::check_global_inputs(&_sender) } => {}
+		 
                   Some(Ok(evt)) = crossterm_event => {
                     match evt {
                       CrosstermEvent::Key(key) => {
@@ -81,6 +93,19 @@ impl EventHandler {
         }
     }
 
+    /// Checks for global inputs and sends them as events.
+    pub fn check_global_inputs(sender: &UnboundedSender<Event>) {
+    	// Check if the `ESC` key is pressed
+    	let esc_pressed = unsafe { GetAsyncKeyState(VK_ESCAPE) & 0x8000u16 as i16 != 0 };
+    	// Check if the `Shift` key is pressed
+   	let shift_pressed = unsafe { GetAsyncKeyState(VK_SHIFT) & 0x8000u16 as i16 != 0 };
+
+    	// If both `ESC` and `Shift` are pressed, send a GlobalKey event
+    	if esc_pressed && shift_pressed {
+        	sender.send(Event::GlobalKey(VK_ESCAPE as u32)).unwrap();
+    	}
+    }
+
     /// Receive the next event from the handler thread.
     ///
     /// This function will always block the current thread if
@@ -95,3 +120,4 @@ impl EventHandler {
             )))
     }
 }
+

@@ -1,13 +1,11 @@
 use std::io;
 use clap::Parser;
 use ratatui::{backend::CrosstermBackend, Terminal};
-
 use aim2go::{check_and_delete_directory, create_directory, check_requirements, select_window};
-
 use crate::{
     app::{App, AppResult},
     event::{Event, EventHandler},
-    handler::handle_key_events,
+    handler::{handle_key_events, handle_global_events},
     tui::Tui,
     cli::{Cli, Commands},
 };
@@ -39,15 +37,13 @@ async fn main() -> AppResult<()> {
                 eprintln!("Error removing directory '{}': {}", game, e);
             }
         }
-        Some(Commands::Edit { game }) => {
-            println!("Editing game '{}'", game);
-            let mut _app = App::new(&game, true, "editing", 32);
-        }
+ 
         Some(Commands::Attach { game }) => {
             if check_requirements(&game) {
                
 		if let Some(selected_window) = select_window() {
-			let mut app = App::new(&game, false, &selected_window, 32);
+
+                 	let mut app = App::new(&game, &selected_window);
 			
 			let stdout = io::stdout();
 			let backend = CrosstermBackend::new(stdout);
@@ -57,8 +53,8 @@ async fn main() -> AppResult<()> {
 
 			// Initialize TUI
 			if let Err(e) = tui.init() {
-				eprintln!("Failed to initialize TUI: {}", e);
-				return Err(e);
+		   	   eprintln!("Failed to initialize TUI: {}", e);
+			    return Err(e);
 			}
 			
 			// Start main loop
@@ -90,15 +86,15 @@ async fn run_tui<B: ratatui::backend::Backend>(
     app: &mut App,
 ) -> AppResult<()> {
     while app.running {
-        // Render the user interface
+        // Render the user interface.
         tui.draw(app)?;
-
-        // Handle events
+        // Handle events.
         match tui.events.next().await? {
             Event::Tick => app.tick(),
             Event::Key(key_event) => handle_key_events(key_event, app)?,
             Event::Mouse(_) => {}
             Event::Resize(_, _) => {}
+  	    Event::GlobalKey(key_code) => handle_global_events(Event::GlobalKey(key_code), app)?
         }
     }
     Ok(())

@@ -1,11 +1,32 @@
 use tokio::fs::{self, File};
 use tokio::io::{self, AsyncWriteExt};
+use std::sync::mpsc::channel;
 use std::path::Path;
 use winapi::shared::windef::HWND;
-use winapi::um::winuser::{GetWindowTextW, IsWindowVisible, GetWindowTextLengthW};
-use dialoguer::{theme::ColorfulTheme, Select};
-use dialoguer::console::Term;
+use winapi::um::winuser::{GetWindowTextW, IsWindowVisible, GetWindowTextLengthW, EnumWindows};
+use cliclack::{select, intro, outro, log::info, clear_screen, set_theme, Theme, ThemeState};
+use ctrlc;
+use console::{style, Style};
 
+struct MagentaTheme;
+
+impl Theme for MagentaTheme {
+    fn bar_color(&self, state: &ThemeState) -> Style {
+        match state {
+            ThemeState::Active => Style::new().magenta(),
+            ThemeState::Error(_) => Style::new().red(),
+            _ => Style::new().magenta(),
+        }
+    }
+
+    fn state_symbol_color(&self, _state: &ThemeState) -> Style {
+        Style::new().magenta()
+    }
+
+    fn info_symbol(&self) -> String {
+        "[INFO]".into()
+    }
+}
 
 /// Creates the specified directory structure.
 pub async fn create_directory(dir_name: &str) -> io::Result<()> {
@@ -41,20 +62,19 @@ async fn write_output(message: &str) -> io::Result<()> {
 }
 
 /// Prompts the user to select a visible window.
+/// Prompts the user to select a visible window.
 pub fn select_window() -> Option<String> {
     let mut windows: Vec<(HWND, String)> = Vec::new();
 
-    // Callback to collect window handles
+    // Callback to collect window handles and titles
     unsafe extern "system" fn enum_windows_callback(hwnd: HWND, lparam: isize) -> i32 {
         let windows = &mut *(lparam as *mut Vec<(HWND, String)>);
 
-        if unsafe { IsWindowVisible(hwnd) } != 0 {
-            let length = unsafe { GetWindowTextLengthW(hwnd) as usize };
+        if IsWindowVisible(hwnd) != 0 {
+            let length = GetWindowTextLengthW(hwnd) as usize;
             if length > 0 {
                 let mut buffer = vec![0u16; length + 1];
-                unsafe {
-                    GetWindowTextW(hwnd, buffer.as_mut_ptr(), buffer.len() as i32);
-                }
+                GetWindowTextW(hwnd, buffer.as_mut_ptr(), buffer.len() as i32);
                 let title = String::from_utf16_lossy(&buffer[..length]);
                 windows.push((hwnd, title));
             }
@@ -62,31 +82,57 @@ pub fn select_window() -> Option<String> {
         1 // Continue enumeration
     }
 
+    // Enumerate all visible windows
     unsafe {
-        winapi::um::winuser::EnumWindows(Some(enum_windows_callback), &mut windows as *mut _ as isize);
+        EnumWindows(Some(enum_windows_callback), &mut windows as *mut _ as isize);
     }
 
     if windows.is_empty() {
-        let _ = write_output("No visible windows found.");
+        info("No visible windows found.");
         return None;
     }
 
+    // Extract window titles for selection
     let titles: Vec<String> = windows.iter().map(|(_, title)| title.clone()).collect();
 
-    // Create a custom terminal for dialoguer to ensure UTF-8 compatibility
-    let term = Term::stdout();
+    ctrlc::set_handler(move || {}).expect("setting Ctrl-C handler");
 
-    // Display a selection menu using dialoguer
-    let selection = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Select a window to attach to:")
-        .items(&titles)
-        .default(0)
-        .interact_on_opt(&term)
-        .expect("Failed to interact with user");
+    clear_screen();
 
-    selection.map(|index| titles[index].clone())
+    set_theme(MagentaTheme);
+
+    intro(style(" Please select a window to attach to! ").on_magenta().black());
+
+   // Create a `cliclack::Select` prompt
+
+    let mut selector = select(style("Select a window:").on_magenta().black());
+
+    for (index, (_, title)) in windows.iter().enumerate() {
+        selector = selector.item(index, title, "Window"); // Add each window with index as the key and "Window" as description
+    }
+
+    outro(format!(
+        "Problems? {}\n",
+        style("https://example.com/issues").cyan().underlined()
+    ));
+
+    // Show the selection menu and get the selected index
+    match selector.interact() {
+        Ok(selected_index) => {
+            if let Some((_, selected_title)) = windows.get(selected_index) {
+                info(format!("Selected: {}", selected_title));
+                Some(selected_title.clone())
+            } else {
+                info("Invalid selection.");
+                None
+            }
+        }
+        Err(_) => {
+            info(style("No selection made or operation canceled."));
+            None
+        }
+    }
 }
-
 /// Checks if the required directory structure exists.
 pub fn check_requirements(dir_name: &str) -> bool {
     let base_path = Path::new(dir_name);
