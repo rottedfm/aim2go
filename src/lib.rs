@@ -5,17 +5,16 @@ use std::path::Path;
 use winapi::shared::windef::HWND;
 use winapi::um::winuser::{GetWindowTextW, IsWindowVisible, GetWindowTextLengthW, EnumWindows};
 use cliclack::{select, intro, outro, log::info, clear_screen, set_theme, Theme, ThemeState};
-use ctrlc;
 use console::{style, Style};
 
-struct MagentaTheme;
+struct PinkTheme;
 
-impl Theme for MagentaTheme {
+impl Theme for PinkTheme {
     fn bar_color(&self, state: &ThemeState) -> Style {
         match state {
-            ThemeState::Active => Style::new().magenta(),
+            ThemeState::Active => Style::new().magenta().bright(),
             ThemeState::Error(_) => Style::new().red(),
-            _ => Style::new().magenta(),
+            _ => Style::new().magenta().dim(),
         }
     }
 
@@ -24,7 +23,38 @@ impl Theme for MagentaTheme {
     }
 
     fn info_symbol(&self) -> String {
-        "[INFO]".into()
+	style("?").magenta().to_string()
+    }
+
+    fn format_select_item(
+        &self,
+        state: &ThemeState,
+        selected: bool,
+        label: &str,
+        _hint: &str,
+    ) -> String {
+        // Handle submit and cancel states to optionally hide non-selected items
+        if matches!(state, ThemeState::Submit | ThemeState::Cancel) && !selected {
+            return String::new();
+        }
+
+        let label_style = if selected {
+            Style::new().magenta()
+        } else {
+            Style::new().white()
+        };
+
+        let hint_style = Style::new().dim();
+
+        let pointer = if selected { style(">").magenta().to_string() } else { " ".to_string() }; // Use an arrow for the selected item
+        let spacing = "  "; // Align items for a clean vertical list
+
+        format!(
+            "{}{} {}\n",
+            pointer,
+            spacing,
+            label_style.apply_to(label)
+        )
     }
 }
 
@@ -95,11 +125,9 @@ pub fn select_window() -> Option<String> {
     // Extract window titles for selection
     let titles: Vec<String> = windows.iter().map(|(_, title)| title.clone()).collect();
 
-    ctrlc::set_handler(move || {}).expect("setting Ctrl-C handler");
-
     clear_screen();
 
-    set_theme(MagentaTheme);
+    set_theme(PinkTheme);
 
     intro(style(" Please select a window to attach to! ").on_magenta().black());
 
@@ -113,14 +141,14 @@ pub fn select_window() -> Option<String> {
 
     outro(format!(
         "Problems? {}\n",
-        style("https://example.com/issues").cyan().underlined()
+        style("https://example.com/issues").magenta().underlined()
     ));
 
     // Show the selection menu and get the selected index
     match selector.interact() {
         Ok(selected_index) => {
             if let Some((_, selected_title)) = windows.get(selected_index) {
-                info(format!("Selected: {}", selected_title));
+                info(format!("Attached to window: '{}'", selected_title));
                 Some(selected_title.clone())
             } else {
                 info("Invalid selection.");
