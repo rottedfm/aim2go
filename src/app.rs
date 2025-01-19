@@ -9,9 +9,11 @@ pub struct App {
     /// Is the application running?
     pub running: bool,
     /// Game name
-    game: String,
+    pub game: String,
     /// Game window
-    game_window: String,
+    pub game_window: String,
+    // Logo gradiant
+    pub logo_gradiant: usize,
 }
 
 impl App {
@@ -21,11 +23,18 @@ impl App {
             running: true,
             game: game.to_string(),
 	    game_window: game_window.to_string(),
+	    logo_gradiant: 0,
         }
     }
 
     /// Handles the tick event of the terminal.
-    pub fn tick(&self) {}
+    pub fn tick(&mut self) {
+	 if self.logo_gradiant < 122 {
+            self.logo_gradiant += 1;
+        } else {
+            self.logo_gradiant = 0;
+        }
+    }
 
     /// Set running to false to quit the application.
     pub fn quit(&mut self) {

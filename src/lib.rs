@@ -1,6 +1,5 @@
 use tokio::fs::{self, File};
 use tokio::io::{self, AsyncWriteExt};
-use std::sync::mpsc::channel;
 use std::path::Path;
 use winapi::shared::windef::HWND;
 use winapi::um::winuser::{GetWindowTextW, IsWindowVisible, GetWindowTextLengthW, EnumWindows};
@@ -31,8 +30,11 @@ impl Theme for PinkTheme {
         state: &ThemeState,
         selected: bool,
         label: &str,
-        _hint: &str,
+        hint: &str,
     ) -> String {
+        // Trim whitespace from the label
+        let trimmed_label = label.trim();
+
         // Handle submit and cancel states to optionally hide non-selected items
         if matches!(state, ThemeState::Submit | ThemeState::Cancel) && !selected {
             return String::new();
@@ -44,16 +46,25 @@ impl Theme for PinkTheme {
             Style::new().white()
         };
 
-        let hint_style = Style::new().dim();
+        let hint_style = Style::new().white();
 
-        let pointer = if selected { style(">").magenta().to_string() } else { " ".to_string() }; // Use an arrow for the selected item
+        let pointer = if selected {
+            style("->").magenta().to_string()
+        } else {
+            "  ".to_string()
+        }; // Use an arrow for the selected item
+
         let spacing = "  "; // Align items for a clean vertical list
 
+        // Show hint only if the item is selected
+        let hint_display = if selected { format!(" {}", hint_style.apply_to(hint)) } else { "".to_string() };
+
         format!(
-            "{}{} {}\n",
+            "{}{} {}{}\n",
             pointer,
             spacing,
-            label_style.apply_to(label)
+            label_style.apply_to(trimmed_label),
+            hint_display
         )
     }
 }
@@ -82,16 +93,6 @@ pub async fn create_directory(dir_name: &str) -> io::Result<()> {
     Ok(())
 }
 
-/// Writes UTF-8 output to the standard output asynchronously.
-async fn write_output(message: &str) -> io::Result<()> {
-    let mut stdout = tokio::io::stdout();
-    stdout.write_all(message.as_bytes()).await?;
-    stdout.write_all(b"\n").await?;
-    stdout.flush().await?;
-    Ok(())
-}
-
-/// Prompts the user to select a visible window.
 /// Prompts the user to select a visible window.
 pub fn select_window() -> Option<String> {
     let mut windows: Vec<(HWND, String)> = Vec::new();
@@ -118,28 +119,25 @@ pub fn select_window() -> Option<String> {
     }
 
     if windows.is_empty() {
-        info("No visible windows found.");
+        let _ = info("No visible windows found.");
         return None;
     }
 
-    // Extract window titles for selection
-    let titles: Vec<String> = windows.iter().map(|(_, title)| title.clone()).collect();
-
-    clear_screen();
+    let _ = clear_screen();
 
     set_theme(PinkTheme);
 
-    intro(style(" Please select a window to attach to! ").on_magenta().black());
+    let _ = intro(style(" Please select a window to attach to! ").on_magenta().black());
 
    // Create a `cliclack::Select` prompt
 
     let mut selector = select(style("Select a window:").on_magenta().black());
 
     for (index, (_, title)) in windows.iter().enumerate() {
-        selector = selector.item(index, title, "Window"); // Add each window with index as the key and "Window" as description
+        selector = selector.item(index, title, "(Window)"); // Add each window with index as the key and "Window" as description
     }
 
-    outro(format!(
+    let _ = outro(format!(
         "Problems? {}\n",
         style("https://example.com/issues").magenta().underlined()
     ));
@@ -148,15 +146,15 @@ pub fn select_window() -> Option<String> {
     match selector.interact() {
         Ok(selected_index) => {
             if let Some((_, selected_title)) = windows.get(selected_index) {
-                info(format!("Attached to window: '{}'", selected_title));
+                let _ = info(format!("Attached to window: '{}'", selected_title));
                 Some(selected_title.clone())
             } else {
-                info("Invalid selection.");
+                let _ = info("Invalid selection.");
                 None
             }
         }
         Err(_) => {
-            info(style("No selection made or operation canceled."));
+            let _ = info("No selection made or operation canceled.");
             None
         }
     }

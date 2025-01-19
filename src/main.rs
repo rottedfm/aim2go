@@ -5,7 +5,7 @@ use aim2go::{check_and_delete_directory, create_directory, check_requirements, s
 use crate::{
     app::{App, AppResult},
     event::{Event, EventHandler},
-    handler::{handle_key_events, handle_global_events},
+    handler::handle_key_events,
     tui::Tui,
     cli::{Cli, Commands},
 };
@@ -48,7 +48,7 @@ async fn main() -> AppResult<()> {
 			let stdout = io::stdout();
 			let backend = CrosstermBackend::new(stdout);
 			let terminal = Terminal::new(backend)?;
-			let events = EventHandler::new(250);
+			let events = EventHandler::new(1);
 			let mut tui = Tui::new(terminal, events);
 
 			// Initialize TUI
@@ -94,7 +94,6 @@ async fn run_tui<B: ratatui::backend::Backend>(
             Event::Key(key_event) => handle_key_events(key_event, app)?,
             Event::Mouse(_) => {}
             Event::Resize(_, _) => {}
-  	    Event::GlobalKey(key_code) => handle_global_events(Event::GlobalKey(key_code), app)?
         }
     }
     Ok(())
