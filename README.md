@@ -2,15 +2,15 @@
 
 # Screen Capture Pipeline
 
-```mermaid
+'''mermaid
 graph TD;
-    A[Frame Capture] -->|Capture full screen using `windows-capture`| B
-    B -->|Resize & Normalize using `image` crate| C
-    C -->|Convert to Tensor using `yolo-rs`| D
-    D -->|Run Inference with `yolo-rs`| E
+    A[Frame Capture] -->|Capture full screen using windows-capture| B
+    B -->|Resize & Normalize using image crate| C
+    C -->|Convert to Tensor using yolo-rs| D
+    D -->|Run Inference with yolo-rs| E
     E -->|Parse Detections| F
     F -->|Identify Targets| G
-    G -->|Move Mouse using `enigo`| H
+    G -->|Move Mouse using enigo| H
     H -->|Optimize Loop| A
 
     subgraph Optimization_Strategies
@@ -26,7 +26,7 @@ graph TD;
     C -.-> K
     D -.-> L
     E -.-> M
-
+'''
     
 ## Execution Flow (Async Parallelization)
 
