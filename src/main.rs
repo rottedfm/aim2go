@@ -41,14 +41,31 @@ async fn main() -> AppResult<()> {
         Some(Commands::Attach { game }) => {
             if check_requirements(&game) {
                
-		if let Some(selected_window) = select_window() {
+		    if let Some(selected_window) = select_window() {
 
-                 	let mut app = App::new(&game, &selected_window);
+		    let logo = r#"
+		                   .                                                               
+              @88>                        .--~*teu.                            
+              %8P      ..    .     :     dF     988Nx                     u.   
+      u        .     .888: x888  x888.  d888b   `8888>      uL      ...ue888b  
+   us888u.   .@88u  ~`8888~'888X`?888f` ?8888>  98888F  .ue888Nc..  888R Y888r 
+.@88 "8888" ''888E`   X888  888X '888>   "**"  x88888~ d88E`"888E`  888R I888> 
+9888  9888    888E    X888  888X '888>        d8888*`  888E  888E   888R I888> 
+9888  9888    888E    X888  888X '888>      z8**"`   : 888E  888E   888R I888> 
+9888  9888    888E    X888  888X '888>    :?.....  ..F 888E  888E  u8888cJ888  
+9888  9888    888&   "*88%""*88" '888!`  <""888888888~ 888& .888E   "*888*P"   
+"888*""888"   R888"    `~    "    `"`    8:  "888888*  *888" 888&     'Y"      
+ ^Y"   ^Y'     ""                        ""    "**"`    `"   "888E             
+                                                       .dWi   `88E             
+                                                       4888~  J8%              
+                                                        ^"===*"`               "#;
+
+            let mut app = App::new(&game, &selected_window, logo);
 			
 			let stdout = io::stdout();
 			let backend = CrosstermBackend::new(stdout);
 			let terminal = Terminal::new(backend)?;
-			let events = EventHandler::new(1);
+			let events = EventHandler::new(24);
 			let mut tui = Tui::new(terminal, events);
 
 			// Initialize TUI
@@ -90,7 +107,7 @@ async fn run_tui<B: ratatui::backend::Backend>(
         tui.draw(app)?;
         // Handle events.
         match tui.events.next().await? {
-            Event::Tick => app.tick(),
+            Event::Tick => app.tick().await,
             Event::Key(key_event) => handle_key_events(key_event, app)?,
             Event::Mouse(_) => {}
             Event::Resize(_, _) => {}

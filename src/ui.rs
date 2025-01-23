@@ -1,10 +1,9 @@
 use ratatui::{
     style::{Color, Style},
     text::{Line, Span},
-    widgets::{Paragraph, Block, Borders, BorderType, block::Position},
-    layout::Alignment,
+    widgets::{Paragraph, Block, Borders, BorderType, block::Position, List,  ListItem},
+    layout::{Alignment, Constraint, Direction, Layout},
     Frame,
-    prelude::*,
 };
 use crate::app::App;
 
@@ -19,17 +18,13 @@ pub fn gradient_line(
     let mut spans = Vec::with_capacity(text.len());
 
     for (col_index, ch) in text.chars().enumerate() {
-        // Calculate a diagonal position based on row and column
         let diagonal_position = row_index + col_index;
-
-        // Determine the distance from the gradient center
         let distance = diagonal_position as isize - center as isize;
 
-        // If within gradient bounds, use a gradient color; otherwise, reset
         let color = if distance >= 0 && (distance as usize) < gradient_len {
             gradient[distance as usize]
         } else {
-            Color::Magenta // Default color for out-of-bounds
+            Color::Magenta
         };
 
         spans.push(Span::styled(
@@ -41,86 +36,99 @@ pub fn gradient_line(
     Line::from(spans)
 }
 
+/// Checks if the terminal size is sufficient, otherwise shows a resize popup.
+pub fn check_terminal_size(frame: &mut Frame, required_height: usize, required_width: usize) -> bool {
+    let terminal_size = frame.area();
+    if (terminal_size.height as usize) < required_height || (terminal_size.width as usize) < required_width {
+        let popup = Paragraph::new("Please resize the terminal to view the full content.")
+            .alignment(Alignment::Center)
+            .block(Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Double)
+                .title("Warning")
+                .title_position(Position::Top)
+                .title_alignment(Alignment::Center)
+                .style(Style::default().fg(Color::Magenta)));
+        
+        let popup_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![Constraint::Percentage(33), Constraint::Percentage(34), Constraint::Percentage(33)])
+            .split(frame.area());
+        
+        frame.render_widget(popup, popup_layout[1]);
+        return false;
+    }
+    true
+}
+
 /// Renders the user interface widgets.
 pub fn render(app: &mut App, frame: &mut Frame) {
+    let required_height = app.logo.lines().count() + 10;
+    let required_width = app.logo.lines().map(|line| line.len()).max().unwrap_or(0) + 10;
+
+    if !check_terminal_size(frame, required_height, required_width) {
+        return;
+    }
 
     let outer_layout = Layout::default()
-	.direction(Direction::Vertical)
-	.constraints(vec![
-		Constraint::Percentage(30),
-		Constraint::Percentage(55),
-		Constraint::Percentage(15),
-	])
-	.split(frame.area());
+        .direction(Direction::Vertical)
+        .constraints(vec![
+            Constraint::Percentage(5),
+            Constraint::Percentage(45),
+            Constraint::Percentage(45),
+            Constraint::Percentage(5),
+        ])
+        .split(frame.area());
 
-     let inner_layout = Layout::default()
-	.direction(Direction::Horizontal)
-	.constraints(vec![
-		Constraint::Percentage(10),
-		Constraint::Percentage(90),
-	])
-	.split(outer_layout[1]);
+    let inner_layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(vec![
+            Constraint::Percentage(25),
+            Constraint::Percentage(50),
+            Constraint::Percentage(25),
+        ])
+        .split(outer_layout[2]);
 
-    // animated logo
-
-    let ascii_art = r#"
-               .                                                                                                           
-              @88>                        .--~*teu.                                                  ..                    
-              %8P      ..    .     :     dF     988Nx                     u.             uL   ..    @L               ..    
-      u        .     .888: x888  x888.  d888b   `8888>      uL      ...ue888b          .@88b  @88R 9888i   .dL     .@88i   
-   us888u.   .@88u  ~`8888~'888X`?888f` ?8888>  98888F  .ue888Nc..  888R Y888r        '"Y888k/"*P  `Y888k:*888.   ""%888>  
-.@88 "8888" ''888E`   X888  888X '888>   "**"  x88888~ d88E`"888E`  888R I888>           Y888L       888E  888I     '88%   
-9888  9888    888E    X888  888X '888>        d8888*`  888E  888E   888R I888>            8888       888E  888I   ..dILr~` 
-9888  9888    888E    X888  888X '888>      z8**"`   : 888E  888E   888R I888>            `888N      888E  888I  '".-%88b  
-9888  9888    888E    X888  888X '888>    :?.....  ..F 888E  888E  u8888cJ888     .    .u./"888&     888E  888I   @  '888k 
-9888  9888    888&   "*88%""*88" '888!`  <""888888888~ 888& .888E   "*888*P"    .@8c  d888" Y888*"  x888N><888' 8F   8888 
-"888*""888"   R888"    `~    "    `"`    8:  "888888*  *888" 888&     'Y"      '%888" ` "Y   Y"      "88"  888  '8    8888 
- ^Y"   ^Y'     ""                        ""    "**"`    `"   "888E               ^*                        88F  '8    888F 
-                                                       .dWi   `88E                                        98"    %k  <88F  
-                                                       4888~  J8%                                       ./"       "+:*%`   
-                                                        ^"===*"`                                       ~`                  "#;
-
-   // Gradient colors for the shimmer effect
+    
     let gradient = vec![
-	Color::LightMagenta,
-	Color::LightMagenta,
-	Color::LightMagenta,
-	Color::LightMagenta,
-	Color::LightMagenta,
-	Color::LightMagenta,
-	Color::White,
-	Color::White,
-	Color::White,
-	Color::White,
-	Color::White,
-	Color::White,
-	 
-    ];	
+        Color::LightMagenta,
+        Color::LightMagenta,
+        Color::LightMagenta,
+        Color::LightMagenta,
+        Color::LightMagenta,
+        Color::LightMagenta,
+        Color::White,
+        Color::White,
+        Color::White,
+        Color::White,
+        Color::White,
+        Color::White,
+    ];
 
-    let gradient_lines: Vec<Line> = ascii_art
+    let gradient_lines: Vec<Line> = app.logo
         .lines()
         .enumerate()
         .map(|(row_index, line)| {
-            gradient_line(line, row_index, app.logo_gradiant, &gradient)
+            gradient_line(line, row_index, app.logo_gradient, &gradient)
         })
         .collect();
 
-    let  ascii = Paragraph::new(gradient_lines)
+    let ascii = Paragraph::new(gradient_lines)
         .alignment(Alignment::Center)
-        .style(Style::default().bg(Color::Black))
-	.block(Block::default().borders(Borders::ALL).border_type(BorderType::Plain).title(app.game_window.clone()).title_position(Position::Bottom).title_alignment(Alignment::Center).title_style(Style::default().light_magenta()).style(Style::default().magenta()));
+        .style(Style::default().bg(Color::Black));
 
+    frame.render_widget(ascii, outer_layout[1]);
 
-    frame.render_widget(ascii, outer_layout[0]);
-
-    let test = Paragraph::new("Test").block(Block::default().borders(Borders::ALL).border_type(BorderType::Plain).style(Style::new().magenta()));
-
-    frame.render_widget(&test, inner_layout[0]);
-    frame.render_widget(&test, inner_layout[1]);
-    frame.render_widget(&test, outer_layout[2]);
-	
-
+    let items = &app.menu_items;
     
+    let list_items: Vec<ListItem> = items
+        .iter()
+        .map(|item| ListItem::new(Line::from(item.as_str())))
+        .collect();
     
+    let list = List::new(list_items)
+        .style(Style::default().fg(Color::Magenta))
+        .highlight_style(Style::default().fg(Color::Black).bg(Color::LightMagenta))
+        .highlight_symbol("/");
 
-}
+    frame.render_stateful_widget(list, inner_layout[1], &mut app.menu_state);}

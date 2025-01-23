@@ -15,6 +15,12 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
             }
 
         }
+        KeyCode::Char('j') | KeyCode::Char('J') => {
+            app.update_menu_state(-1, app.menu_items.len());
+        }
+        KeyCode::Char('k') | KeyCode::Char('K') => {
+            app.update_menu_state(1, app.menu_items.len());
+        }
         // Other handlers you could add here.
         _ => {}
     }
