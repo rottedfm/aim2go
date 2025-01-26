@@ -5,6 +5,11 @@ authors = ["rottedfm <rottedfm@proton.me>"]
 license = "MIT"
 edition = "2021"
 
+[features]
+default = ["free"]
+free = []
+paid = []
+
 [dependencies]
 chrono = "0.4.39"
 clap = { version = "4.5.26", features = ["derive"] }
@@ -12,10 +17,6 @@ cliclack = "0.3.5"
 console = { version = "0.15.10", features = ["windows-console-colors"] }
 crossterm = { version = "0.28.1", features = ["event-stream"] }
 futures = "0.3.31"
-image = "0.25.5"
-imageproc = "0.25.0"
-indicatif = "0.17.9"
-rand = "0.8.5"
 ratatui = "0.29.0"
 serde = { version = "1.0.217", features = ["derive"] }
 serde_yaml = "0.9.34"

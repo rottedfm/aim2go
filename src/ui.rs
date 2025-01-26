@@ -5,7 +5,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout},
     Frame,
 };
-use crate::app::App;
+use crate::app::{App, Mode};
 
 /// Generates a single diagonal gradient across the entire ASCII art.
 pub fn gradient_line(
@@ -63,72 +63,85 @@ pub fn check_terminal_size(frame: &mut Frame, required_height: usize, required_w
 
 /// Renders the user interface widgets.
 pub fn render(app: &mut App, frame: &mut Frame) {
-    let required_height = app.logo.lines().count() + 10;
-    let required_width = app.logo.lines().map(|line| line.len()).max().unwrap_or(0) + 10;
+    match &app.mode {
+        Mode::Menu => {
+            let required_logo_height = app.logo.lines().count();
+            let required_select_height = app.menu_items.len();
+            let required_height = required_logo_height + required_select_height + 5;
+            let required_width = app.logo.lines().map(|line| line.len()).max().unwrap_or(0) + 10;
 
-    if !check_terminal_size(frame, required_height, required_width) {
-        return;
+            if !check_terminal_size(frame, required_height, required_width) {
+                return;
+            }
+
+            let outer_layout = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(vec![
+                    Constraint::Min(required_logo_height.try_into().unwrap()),
+                    Constraint::Min(5),
+                    Constraint::Min(required_select_height.try_into().unwrap()),
+                    Constraint::Max(15),
+                    Constraint::Min(1),
+                ])
+                .split(frame.area());
+
+            let inner_layout = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints(vec![
+                    Constraint::Percentage(25),
+                    Constraint::Percentage(50),
+                    Constraint::Percentage(25),
+                ])
+                .split(outer_layout[2]);
+
+    
+            let gradient = vec![
+                Color::LightMagenta,
+                Color::LightMagenta,
+                Color::LightMagenta,
+                Color::LightMagenta,
+                Color::LightMagenta,
+                Color::LightMagenta,
+                Color::White,
+                Color::White,
+                Color::White,
+                Color::White,
+                Color::White,
+                Color::White,
+            ];
+
+            let gradient_lines: Vec<Line> = app.logo
+                .lines()
+                .enumerate()
+                .map(|(row_index, line)| {
+                    gradient_line(line, row_index, app.logo_gradient, &gradient)
+                })
+                .collect();
+
+            let ascii = Paragraph::new(gradient_lines)
+                .alignment(Alignment::Center)
+                .style(Style::default().bg(Color::Black));
+
+            frame.render_widget(ascii, outer_layout[0]);
+
+            let hint = Paragraph::new("Hint: Use 'h' to find the keybinds of any mode!").alignment(Alignment::Center).style(Style::default().fg(Color::Magenta));
+
+            frame.render_widget(hint, outer_layout[4]);
+
+            let items = &app.menu_items;
+    
+            let list_items: Vec<ListItem> = items
+                .iter()
+                .map(|item| ListItem::new(Line::from(item.as_str())))
+                .collect();
+    
+            let list = List::new(list_items)
+                .style(Style::default().fg(Color::Magenta))
+                .highlight_style(Style::default().fg(Color::Black).bg(Color::LightMagenta))
+                .highlight_symbol("/");
+
+            frame.render_stateful_widget(list, inner_layout[1], &mut app.menu_state);      
+        }
+        _ => {}
     }
-
-    let outer_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(vec![
-            Constraint::Percentage(5),
-            Constraint::Percentage(45),
-            Constraint::Percentage(45),
-            Constraint::Percentage(5),
-        ])
-        .split(frame.area());
-
-    let inner_layout = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints(vec![
-            Constraint::Percentage(25),
-            Constraint::Percentage(50),
-            Constraint::Percentage(25),
-        ])
-        .split(outer_layout[2]);
-
-    
-    let gradient = vec![
-        Color::LightMagenta,
-        Color::LightMagenta,
-        Color::LightMagenta,
-        Color::LightMagenta,
-        Color::LightMagenta,
-        Color::LightMagenta,
-        Color::White,
-        Color::White,
-        Color::White,
-        Color::White,
-        Color::White,
-        Color::White,
-    ];
-
-    let gradient_lines: Vec<Line> = app.logo
-        .lines()
-        .enumerate()
-        .map(|(row_index, line)| {
-            gradient_line(line, row_index, app.logo_gradient, &gradient)
-        })
-        .collect();
-
-    let ascii = Paragraph::new(gradient_lines)
-        .alignment(Alignment::Center)
-        .style(Style::default().bg(Color::Black));
-
-    frame.render_widget(ascii, outer_layout[1]);
-
-    let items = &app.menu_items;
-    
-    let list_items: Vec<ListItem> = items
-        .iter()
-        .map(|item| ListItem::new(Line::from(item.as_str())))
-        .collect();
-    
-    let list = List::new(list_items)
-        .style(Style::default().fg(Color::Magenta))
-        .highlight_style(Style::default().fg(Color::Black).bg(Color::LightMagenta))
-        .highlight_symbol("/");
-
-    frame.render_stateful_widget(list, inner_layout[1], &mut app.menu_state);}
+}
