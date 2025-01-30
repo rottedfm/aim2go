@@ -1,6 +1,6 @@
 use ratatui::{
     style::{Color, Style},
-    text::{Line, Span},
+    text::{Text, Line, Span},
     widgets::{Paragraph, Block, Borders, BorderType, block::Position, List,  ListItem},
     layout::{Alignment, Constraint, Direction, Layout},
     Frame,
@@ -67,7 +67,7 @@ pub fn render(app: &mut App, frame: &mut Frame) {
         Mode::Menu => {
             let required_logo_height = app.logo.lines().count();
             let required_select_height = app.menu_items.len();
-            let required_height = required_logo_height + required_select_height + 5;
+            let required_height = required_logo_height + required_select_height + 35;
             let required_width = app.logo.lines().map(|line| line.len()).max().unwrap_or(0) + 10;
 
             if !check_terminal_size(frame, required_height, required_width) {
@@ -78,10 +78,10 @@ pub fn render(app: &mut App, frame: &mut Frame) {
                 .direction(Direction::Vertical)
                 .constraints(vec![
                     Constraint::Min(required_logo_height.try_into().unwrap()),
-                    Constraint::Min(5),
+                    Constraint::Max(20),
                     Constraint::Min(required_select_height.try_into().unwrap()),
-                    Constraint::Max(15),
-                    Constraint::Min(1),
+                    Constraint::Max(10),
+                    Constraint::Max(5),
                 ])
                 .split(frame.area());
 
@@ -124,7 +124,8 @@ pub fn render(app: &mut App, frame: &mut Frame) {
 
             frame.render_widget(ascii, outer_layout[0]);
 
-            let hint = Paragraph::new("Hint: Use 'h' to find the keybinds of any mode!").alignment(Alignment::Center).style(Style::default().fg(Color::Magenta));
+
+            let hint = Paragraph::new("Version: 0.1.0 \nMaintained by rottedfm \nAre you a rust developer and want get paid to contribute to aim2go? \nPlease visit: https://aim2go.xyz/contribute for more information!").alignment(Alignment::Center).style(Style::default().fg(Color::Magenta));
 
             frame.render_widget(hint, outer_layout[4]);
 
@@ -141,6 +142,31 @@ pub fn render(app: &mut App, frame: &mut Frame) {
                 .highlight_symbol("/");
 
             frame.render_stateful_widget(list, inner_layout[1], &mut app.menu_state);      
+        }
+        Mode::Execute => {
+            let layout = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(vec![
+                    Constraint::Max(97),
+                    Constraint::Max(3),
+                ])
+                .split(frame.area());
+
+            let log_lines: Vec<Line> = app
+                .log
+                .iter()
+                .map(|entry| Line::from(Span::styled(entry, Style::default().fg(Color::LightMagenta))))
+                .collect();
+
+            let log = Paragraph::new(Text::from(log_lines))
+                .block(Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).title("[Execution Log]").title_alignment(Alignment::Center).border_style(Style::default().fg(Color::Magenta)));
+
+            frame.render_widget(log, layout[0]);
+
+            let input = Paragraph::new("/help or 'h' for keybind/commands").block(Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).border_style(Style::default().fg(Color::Magenta))).style(Style::default().fg(Color::LightMagenta));
+
+            frame.render_widget(input, layout[1]);
+
         }
         _ => {}
     }

@@ -93,8 +93,8 @@ pub async fn create_directory(dir_name: &str) -> io::Result<()> {
     Ok(())
 }
 
-/// Prompts the user to select a visible window.
-pub fn select_window() -> Option<String> {
+/// Prompts the user to select a visible window and returns the selected window's `HWND`.
+pub fn select_window() -> Option<HWND> {
     let mut windows: Vec<(HWND, String)> = Vec::new();
 
     // Callback to collect window handles and titles
@@ -129,8 +129,7 @@ pub fn select_window() -> Option<String> {
 
     let _ = intro(style(" Please select a window to attach to! ").on_magenta().black());
 
-   // Create a `cliclack::Select` prompt
-
+    // Create a `cliclack::Select` prompt
     let mut selector = select(style("Select a window:").on_magenta().black());
 
     for (index, (_, title)) in windows.iter().enumerate() {
@@ -138,16 +137,16 @@ pub fn select_window() -> Option<String> {
     }
 
     let _ = outro(format!(
-        "Problems? {}\n",
-        style("https://example.com/issues").magenta().underlined()
+        "Problems? {}",
+        style("https://example.com/issues").magenta().underlined(),
     ));
 
     // Show the selection menu and get the selected index
     match selector.interact() {
         Ok(selected_index) => {
-            if let Some((_, selected_title)) = windows.get(selected_index) {
+            if let Some((selected_hwnd, selected_title)) = windows.get(selected_index) {
                 let _ = info(format!("Attached to window: '{}'", selected_title));
-                Some(selected_title.clone())
+                Some(*selected_hwnd) // Return the HWND of the selected window
             } else {
                 let _ = info("Invalid selection.");
                 None
@@ -159,6 +158,8 @@ pub fn select_window() -> Option<String> {
         }
     }
 }
+
+
 /// Checks if the required directory structure exists.
 pub fn check_requirements(dir_name: &str) -> bool {
     let base_path = Path::new(dir_name);

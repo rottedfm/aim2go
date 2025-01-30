@@ -2,10 +2,12 @@ use crate::app::{App, AppResult, Mode};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 /// Handles the key events and updates the state of [`App`].
-pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
+pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
     match key_event.code {
         // Exit application on `ESC` or `q`
         KeyCode::Char('q') => {
+            app.is_overlay_active = false;
+            app.check_overlay_status().await;
             app.quit();
         }
         // Exit application on `Ctrl-C`
