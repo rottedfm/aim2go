@@ -6,6 +6,10 @@ use winapi::um::winuser::{GetWindowTextW, IsWindowVisible, GetWindowTextLengthW,
 use cliclack::{select, intro, outro, log::info, clear_screen, set_theme, Theme, ThemeState};
 use console::{style, Style};
 
+pub mod config;
+
+use crate::config::create_default_game_config;
+
 struct PinkTheme;
 
 impl Theme for PinkTheme {
@@ -84,12 +88,8 @@ pub async fn create_directory(dir_name: &str) -> io::Result<()> {
         println!("Subdirectory '{}' created successfully!", sub_dir_path.display());
     }
 
-    // Create a blank 'config.yaml'
-    let config_path = base_path.join("config.yaml");
-    let mut file = File::create(&config_path).await?;
-    file.write_all(b"# Config").await?;
-    println!("File '{}' created successfully!", config_path.display());
-
+    create_default_game_config(dir_name);
+    
     Ok(())
 }
 

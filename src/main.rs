@@ -18,6 +18,7 @@ pub mod thread;
 pub mod tui;
 pub mod ui;
 pub mod overlay;
+pub mod config;
 
 #[tokio::main] async fn main() -> AppResult<()> {
     // Parse command-line arguments
@@ -75,7 +76,7 @@ pub mod overlay;
                 let stdout = io::stdout();
                 let backend = CrosstermBackend::new(stdout);
                 let terminal = Terminal::new(backend)?;
-                let events = EventHandler::new(8);
+                let events = EventHandler::new(16);
                 let mut tui = Tui::new(terminal, events);
 
                 // Initialize TUI
