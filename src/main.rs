@@ -44,7 +44,7 @@ pub mod config;
                 println!("Select a window to attach to...");
 
             
-                let selected_window = select_window();
+                let selected_window = select_window(&game);
                 if selected_window.is_none() {
                     eprintln!("No window selected. Exiting...");
                     return Ok(());
@@ -52,26 +52,7 @@ pub mod config;
 
                 let selected_window = selected_window.unwrap(); // Safe because we checked
 
-                let logo = r#"
-                                                                      
-                                                                      
-                                ____      ,----,                      
-               ,--,           ,'  , `.  .'   .' \                     
-             ,--.'|        ,-+-,.' _ |,----,'    |            ,---.   
-             |  |,      ,-+-. ;   , |||    :  .  ;,----._,.  '   ,'\  
-   ,--.--.   `--'_     ,--.'|'   |  ||;    |.'  //   /  ' / /   /   | 
-  /       \  ,' ,'|   |   |  ,', |  |,`----'/  ;|   :     |.   ; ,. : 
- .--.  .-. | '  | |   |   | /  | |--'   /  ;  / |   | .\  .'   | |: : 
-  \__\/: . . |  | :   |   : |  | ,     ;  /  /-,.   ; ';  |'   | .; : 
-  ," .--.; | '  : |__ |   : |  |/     /  /  /.`|'   .   . ||   :    | 
- /  /  ,.  | |  | '.'||   | |`-'    ./__;      : `---`-'| | \   \  /  
-;  :   .'   \;  :    ;|   ;/        |   :    .'  .'__/\_: |  `----'   
-|  ,     .-./|  ,   / '---'         ;   | .'     |   :    :           
- `--`---'     ---`-'                `---'         \   \  /            
-                                                   `--`-'             
-            "#;
-
-                let mut app = App::new(&game, selected_window, logo);
+                let mut app = App::new(&game, selected_window);
 
                 let stdout = io::stdout();
                 let backend = CrosstermBackend::new(stdout);

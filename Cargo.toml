@@ -23,6 +23,3 @@ serde = { version = "1.0.217", features = ["derive"] }
 serde_yaml = "0.9.34"
 tokio = { version = "1.40.0", features = ["full"] }
 winapi = { version = "0.3.9", features = ["winuser"] }
-winit = "0.30.8"
-xcap = "0.2.2"
-yolo-rs = "0.1.1"

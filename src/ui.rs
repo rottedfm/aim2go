@@ -6,16 +6,33 @@ use ratatui::{
     Frame,
 };
 use crate::app::{App, Mode};
+use crate::config::load_game_config;
+
+/// Returns the corresponding theme color from config
+fn get_theme_color(game: &str) -> Color {
+    let config = load_game_config(game).unwrap_or_else(|_| panic!("Failed to load config"));
+
+    match config.app.theme.as_str() {
+        "red" => Color::Red,
+        "green" => Color::Green,
+        "blue" => Color::Blue,
+        "yellow" => Color::Yellow,
+        _ => Color::Magenta,
+    }
+}
 
 /// Generates a single diagonal gradient across the entire ASCII art.
 pub fn gradient_line(
     text: &str,
     row_index: usize,
     center: usize,
+    game: &str,
     gradient: &[Color],
 ) -> Line<'static> {
     let gradient_len = gradient.len();
     let mut spans = Vec::with_capacity(text.len());
+
+    let theme_color = get_theme_color(&game);
 
     for (col_index, ch) in text.chars().enumerate() {
         let diagonal_position = row_index + col_index;
@@ -24,7 +41,7 @@ pub fn gradient_line(
         let color = if distance >= 0 && (distance as usize) < gradient_len {
             gradient[distance as usize]
         } else {
-            Color::Magenta
+            theme_color
         };
 
         spans.push(Span::styled(
@@ -94,14 +111,15 @@ pub fn render(app: &mut App, frame: &mut Frame) {
                 ])
                 .split(outer_layout[2]);
 
+            let theme_color = get_theme_color(&app.game);
     
             let gradient = vec![
-                Color::LightMagenta,
-                Color::LightMagenta,
-                Color::LightMagenta,
-                Color::LightMagenta,
-                Color::LightMagenta,
-                Color::LightMagenta,
+                theme_color,
+                theme_color,
+                theme_color,
+                theme_color,
+                theme_color,
+                theme_color,
                 Color::White,
                 Color::White,
                 Color::White,
@@ -114,7 +132,7 @@ pub fn render(app: &mut App, frame: &mut Frame) {
                 .lines()
                 .enumerate()
                 .map(|(row_index, line)| {
-                    gradient_line(line, row_index, app.logo_gradient, &gradient)
+                    gradient_line(line, row_index, app.logo_gradient, &app.game, &gradient)
                 })
                 .collect();
 
@@ -125,7 +143,7 @@ pub fn render(app: &mut App, frame: &mut Frame) {
             frame.render_widget(ascii, outer_layout[0]);
 
 
-            let hint = Paragraph::new("Version: 0.1.0 \nMaintained by rottedfm \nAre you a rust developer and want get paid to contribute to aim2go? \nPlease visit: https://aim2go.xyz/contribute for more information!").alignment(Alignment::Center).style(Style::default().fg(Color::Magenta));
+            let hint = Paragraph::new("Version: 0.1.0 \nMaintained by rottedfm \nAre you a rust developer and want get paid to contribute to aim2go? \nPlease visit: https://aim2go.xyz/contribute for more information!").alignment(Alignment::Center).style(Style::default().fg(theme_color));
 
             frame.render_widget(hint, outer_layout[4]);
 
@@ -137,8 +155,8 @@ pub fn render(app: &mut App, frame: &mut Frame) {
                 .collect();
     
             let list = List::new(list_items)
-                .style(Style::default().fg(Color::Magenta))
-                .highlight_style(Style::default().fg(Color::Black).bg(Color::LightMagenta))
+                .style(Style::default().fg(theme_color))
+                .highlight_style(Style::default().fg(Color::Black).bg(theme_color))
                 .highlight_symbol("/");
 
             frame.render_stateful_widget(list, inner_layout[1], &mut app.menu_state);      
@@ -152,18 +170,20 @@ pub fn render(app: &mut App, frame: &mut Frame) {
                 ])
                 .split(frame.area());
 
+            let theme_color = get_theme_color(&app.game);
+
             let log_lines: Vec<Line> = app
                 .log
                 .iter()
-                .map(|entry| Line::from(Span::styled(entry, Style::default().fg(Color::LightMagenta))))
+                .map(|entry| Line::from(Span::styled(entry, Style::default().fg(theme_color))))
                 .collect();
 
             let log = Paragraph::new(Text::from(log_lines))
-                .block(Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).title("[Execution Log]").title_alignment(Alignment::Center).border_style(Style::default().fg(Color::Magenta)));
+                .block(Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).title("[Execution Log]").title_alignment(Alignment::Center).border_style(Style::default().fg(theme_color)));
 
             frame.render_widget(log, layout[0]);
 
-            let input = Paragraph::new("/help or 'h' for keybind/commands").block(Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).border_style(Style::default().fg(Color::Magenta))).style(Style::default().fg(Color::LightMagenta));
+            let input = Paragraph::new("/help or 'h' for keybind/commands").block(Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).border_style(Style::default().fg(theme_color))).style(Style::default().fg(theme_color));
 
             frame.render_widget(input, layout[1]);
 

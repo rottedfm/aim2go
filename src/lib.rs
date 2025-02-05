@@ -1,32 +1,58 @@
-use tokio::fs::{self, File};
-use tokio::io::{self, AsyncWriteExt};
+use tokio::fs;
+use tokio::io;
 use std::path::Path;
 use winapi::shared::windef::HWND;
 use winapi::um::winuser::{GetWindowTextW, IsWindowVisible, GetWindowTextLengthW, EnumWindows};
 use cliclack::{select, intro, outro, log::info, clear_screen, set_theme, Theme, ThemeState};
-use console::{style, Style};
+use console::Style;
 
 pub mod config;
 
-use crate::config::create_default_game_config;
+use crate::config::{create_default_game_config, load_game_config};
 
-struct PinkTheme;
+#[derive(Debug)]
+struct DynamicTheme {
+    pub color: Style,
+}
 
-impl Theme for PinkTheme {
+impl DynamicTheme {
+    pub fn from_config(game:&str) -> Self {
+        let config = load_game_config(game).expect("Failed to load config");
+
+        let theme_color = match config.app.theme.as_str() {
+            "red" => Style::new().red(),
+            "green" => Style::new().green(),
+            "blue" => Style::new().blue(),
+            "yellow" => Style::new().yellow(),
+            _ => Style::new().magenta(),
+        };
+
+        Self { color: theme_color }
+        
+    }
+}
+impl Clone for DynamicTheme {
+    fn clone(&self) -> Self {
+         Self {
+             color: self.color.clone(),
+         }
+    }
+}
+impl Theme for DynamicTheme {
     fn bar_color(&self, state: &ThemeState) -> Style {
         match state {
-            ThemeState::Active => Style::new().magenta().bright(),
+            ThemeState::Active => self.color.clone().bright(),
             ThemeState::Error(_) => Style::new().red(),
-            _ => Style::new().magenta().dim(),
+            _ => self.color.clone().dim(),
         }
     }
 
     fn state_symbol_color(&self, _state: &ThemeState) -> Style {
-        Style::new().magenta()
+        self.color.clone()
     }
 
     fn info_symbol(&self) -> String {
-	style("?").magenta().to_string()
+        format!("{}", self.color.apply_to("?"))
     }
 
     fn format_select_item(
@@ -45,7 +71,7 @@ impl Theme for PinkTheme {
         }
 
         let label_style = if selected {
-            Style::new().magenta()
+            self.color.clone()
         } else {
             Style::new().white()
         };
@@ -53,7 +79,7 @@ impl Theme for PinkTheme {
         let hint_style = Style::new().white();
 
         let pointer = if selected {
-            style("->").magenta().to_string()
+            format!("{}", self.color.apply_to(">>"))
         } else {
             "  ".to_string()
         }; // Use an arrow for the selected item
@@ -88,14 +114,18 @@ pub async fn create_directory(dir_name: &str) -> io::Result<()> {
         println!("Subdirectory '{}' created successfully!", sub_dir_path.display());
     }
 
-    create_default_game_config(dir_name);
+    let _ = create_default_game_config(dir_name);
+    println!("File 'config.yaml' created successfully!");
     
     Ok(())
 }
 
 /// Prompts the user to select a visible window and returns the selected window's `HWND`.
-pub fn select_window() -> Option<HWND> {
+pub fn select_window(game: &str) -> Option<HWND> {
     let mut windows: Vec<(HWND, String)> = Vec::new();
+
+    // Load the theme dynamically
+    let theme = DynamicTheme::from_config(game);
 
     // Callback to collect window handles and titles
     unsafe extern "system" fn enum_windows_callback(hwnd: HWND, lparam: isize) -> i32 {
@@ -125,12 +155,13 @@ pub fn select_window() -> Option<HWND> {
 
     let _ = clear_screen();
 
-    set_theme(PinkTheme);
+    // Apply the dynamic theme
+    set_theme(theme.clone());
 
-    let _ = intro(style(" Please select a window to attach to! ").on_magenta().black());
+    let _ = intro(format!("{}", theme.color.apply_to(" Please select a window to attach to! ")));
 
     // Create a `cliclack::Select` prompt
-    let mut selector = select(style("Select a window:").on_magenta().black());
+    let mut selector = select(format!("{}", theme.color.apply_to("Select a window:")));
 
     for (index, (_, title)) in windows.iter().enumerate() {
         selector = selector.item(index, title, "(Window)"); // Add each window with index as the key and "Window" as description
@@ -138,14 +169,17 @@ pub fn select_window() -> Option<HWND> {
 
     let _ = outro(format!(
         "Problems? {}",
-        style("https://example.com/issues").magenta().underlined(),
+        theme.color.apply_to("https://example.com/issues").underlined()
     ));
 
     // Show the selection menu and get the selected index
     match selector.interact() {
         Ok(selected_index) => {
             if let Some((selected_hwnd, selected_title)) = windows.get(selected_index) {
-                let _ = info(format!("Attached to window: '{}'", selected_title));
+                let _ = info(format!(
+                    "Attached to window: {}",
+                    theme.color.apply_to(selected_title)
+                ));
                 Some(*selected_hwnd) // Return the HWND of the selected window
             } else {
                 let _ = info("Invalid selection.");
@@ -158,7 +192,6 @@ pub fn select_window() -> Option<HWND> {
         }
     }
 }
-
 
 /// Checks if the required directory structure exists.
 pub fn check_requirements(dir_name: &str) -> bool {

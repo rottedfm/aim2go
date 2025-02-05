@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 /// Configuration structure for both app-wide and game-specific settings.
 #[derive(Debug, Deserialize, Serialize)]
@@ -17,16 +17,12 @@ pub struct AppConfig {
     pub frame_rate: u64,
     pub theme: String,
     pub ascii_art: String,
-    pub ascii_effect: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GameConfig {
     pub overlay: OverlayConfig,
-    pub yolo: YoloConfig,
-    pub aimbot: AimbotConfig,
     pub keybinds: KeybindConfig,
-    pub trainer: TrainerConfig,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -45,22 +41,11 @@ pub enum CrosshairType {
     Cross,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct YoloConfig {
-    pub resolution: HashMap<u64, u64>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct AimbotConfig {
-    pub reaction_time: u16,
-    pub accuracy: f32,
-    pub offset_multiplier: f32,
-    pub active_radius: u16,
-}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct KeybindConfig {
-    pub keybinds: HashMap<String, Actions>,
+    pub keyboard: HashMap<String, Actions>,
+    pub mouse: HashMap<String, Actions>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -70,13 +55,6 @@ pub enum Actions {
     SnapAim,
     CloseOverlay,
     Quit,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct TrainerConfig {
-    pub min_data: u8,
-    pub live_training: bool,
-    pub classes: Vec<HashMap<String, String>>,
 }
 
 /// Returns the directory path for a specific game: `./<game>/`
@@ -122,7 +100,6 @@ pub fn save_game_config(game: &str, config: &Config) -> io::Result<()> {
 /// Creates a default configuration file for a new game.
 pub fn create_default_game_config(game: &str) -> io::Result<()> {
     let game_dir = get_game_config_dir(game);
-    let config_file = get_game_config_file(game);
 
     if !game_dir.exists() {
         fs::create_dir_all(&game_dir)?;
@@ -132,24 +109,22 @@ pub fn create_default_game_config(game: &str) -> io::Result<()> {
         app: AppConfig {
             tick_rate: 60,
             frame_rate: 144,
-            theme: "purple".to_string(),
+            theme: "magenta".to_string(),
             ascii_art: r#"
                                 ____      ,----,                      
                ,--,           ,'  , `.  .'   .' \                     
-             ,--.'|        ,-+-,.' _ |,----,'    |            ,---.   
-             |  |,      ,-+-. ;   , |||    :  .  ;,----._,.  '   ,'\  
-   ,--.--.   `--'_     ,--.'|'   |  ||;    |.'  //   /  ' / /   /   | 
-  /       \  ,' ,'|   |   |  ,', |  |,`----'/  ;|   :     |.   ; ,. : 
- .--.  .-. | '  | |   |   | /  | |--'   /  ;  / |   | .\  .'   | |: : 
-  \__\/: . . |  | :   |   : |  | ,     ;  /  /-,.   ; ';  |'   | .; : 
-  ," .--.; | '  : |__ |   : |  |/     /  /  /.`|'   .   . ||   :    | 
- /  /  ,.  | |  | '.'||   | |`-'    ./__;      : `---`-'| | \   \  /  
-;  :   .'   \;  :    ;|   ;/        |   :    .'  .'__/\_: |  `----'   
-|  ,     .-./|  ,   / '---'         ;   | .'     |   :    :           
- `--`---'     ---`-'                `---'         \   \  /            
-                                                   `--`-'             
-                "#.to_string(),
-            ascii_effect: "gradient".to_string(),
+             ,--.'|        ,-+-,.' _ |,----,'    |            ,---.  
+             |  |,      ,-+-. ;   , |||    :  .  ;,----._,.  '   ,'\ 
+   ,--.--.   `--'_     ,--.'|'   |  ||;    |.'  //   /  ' / /   /   |
+  /       \  ,' ,'|   |   |  ,', |  |,`----'/  ;|   :     |.   ; ,. :
+ .--.  .-. | '  | |   |   | /  | |--'   /  ;  / |   | .\  .'   | |: :
+  \__\/: . . |  | :   |   : |  | ,     ;  /  /-,.   ; ';  |'   | .; :
+  ," .--.; | '  : |__ |   : |  |/     /  /  /.`|'   .   . ||   :    |
+ /  /  ,.  | |  | '.'||   | |`-'    ./__;      : `---`-'| | \   \  / 
+;  :   .'   \;  :    ;|   ;/        |   :    .'  .'__/\_: |  `----'  
+|  ,     .-./|  ,   / '---'         ;   | .'     |   :    :          
+ `--`---'     ---`-'                `---'         \   \  /           
+                                                   `--`-'            "#.to_string(),
         },
         game: GameConfig {
             overlay: OverlayConfig {
@@ -165,28 +140,16 @@ pub fn create_default_game_config(game: &str) -> io::Result<()> {
                 class_radial_position: HashMap::new(),
                 hud_ascii: "default".to_string(),
             },
-            yolo: YoloConfig {
-                resolution: HashMap::from([(640, 640)]),
-            },
-            aimbot: AimbotConfig {
-                reaction_time: 273,
-                accuracy: 0.9,
-                offset_multiplier: 1.2,
-                active_radius: 50,
-            },
             keybinds: KeybindConfig {
-                keybinds: HashMap::from([
-                    ("LMB".to_string(), Actions::ClickCapture),
-                    ("RMB".to_string(), Actions::SnapAim),
+                keyboard: HashMap::from([
                     ("CTRL+Q".to_string(), Actions::ClassCaptureWheel),
                     ("CTRL+ESC".to_string(), Actions::CloseOverlay),
                     ("CTRL+SHIFT+ESC".to_string(), Actions::Quit),
                 ]),
-            },
-            trainer: TrainerConfig {
-                min_data: 5,
-                live_training: false,
-                classes: vec![],
+                mouse: HashMap::from([                    
+                    ("LMB".to_string(), Actions::ClickCapture),
+                    ("RMB".to_string(), Actions::SnapAim),
+                ]),
             },
         },
     };

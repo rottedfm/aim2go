@@ -4,6 +4,7 @@ use std::time::{Duration, Instant};
 use winapi::shared::windef::HWND;
 
 use crate::thread::{ThreadHandler, ThreadType};
+use crate::config::load_game_config;
 
 /// Application result type.
 pub type AppResult<T> = std::result::Result<T, Box<dyn Error>>;
@@ -19,6 +20,8 @@ pub struct App {
     pub game: String,
     /// Game window
     pub game_window: HWND,
+    /// TUI Theme
+    pub theme: String,
     /// Logo gradient position
     pub logo_gradient: usize,
     /// Logo
@@ -56,9 +59,22 @@ pub enum Mode {
 
 impl App {
     /// Constructs a new instance of [`App`].
-    pub fn new(game: &str, game_window: HWND, logo: &str) -> Self {
+    pub fn new(game: &str, game_window: HWND) -> Self {
         let mut list_state = ListState::default();
         list_state.select(Some(0));  // Start with the first item selected
+
+        // Load the config for the given game
+        let config = match load_game_config(game) {
+            Ok(cfg) => cfg,
+            Err(_) => {
+                eprintln!("Failed to load config for game '{}'", game);
+                panic!("Could not load configuration.");
+            }
+        };
+
+        let logo = config.app.ascii_art.clone();
+
+        let theme = config.app.theme.clone();
 
         // Feature-based menu item selection
         #[cfg(feature = "free")]
@@ -82,6 +98,7 @@ impl App {
             is_overlay_active: true,
             overlay_was_active: false,
             last_overlay_check: Instant::now(),
+            theme,
         }
     }
 
