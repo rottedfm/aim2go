@@ -14,7 +14,6 @@ pub struct Config {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AppConfig {
     pub tick_rate: u64,
-    pub frame_rate: u64,
     pub theme: String,
     pub ascii_art: String,
 }
@@ -30,9 +29,6 @@ pub struct OverlayConfig {
     pub render: Vec<String>,
     pub crosshair_type: CrosshairType,
     pub crosshair_size: u8,
-    pub class_radial_size: u16,
-    pub class_radial_position: HashMap<u16, u16>,
-    pub hud_ascii: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -108,7 +104,6 @@ pub fn create_default_game_config(game: &str) -> io::Result<()> {
     let default_config = Config {
         app: AppConfig {
             tick_rate: 60,
-            frame_rate: 144,
             theme: "magenta".to_string(),
             ascii_art: r#"
                                 ____      ,----,                      
@@ -136,9 +131,6 @@ pub fn create_default_game_config(game: &str) -> io::Result<()> {
                 ],
                 crosshair_type: CrosshairType::Dot,
                 crosshair_size: 5,
-                class_radial_size: 100,
-                class_radial_position: HashMap::new(),
-                hud_ascii: "default".to_string(),
             },
             keybinds: KeybindConfig {
                 keyboard: HashMap::from([

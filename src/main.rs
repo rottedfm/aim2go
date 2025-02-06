@@ -8,6 +8,7 @@ use crate::{
     handler::handle_key_events,
     tui::Tui,
     cli::{Cli, Commands},
+    config::load_game_config,
 };
 
 pub mod cli;
@@ -53,11 +54,15 @@ pub mod config;
                 let selected_window = selected_window.unwrap(); // Safe because we checked
 
                 let mut app = App::new(&game, selected_window);
+        
+                let config = load_game_config(&game)?;
 
+                let tick_rate = config.app.tick_rate;
+                
                 let stdout = io::stdout();
                 let backend = CrosstermBackend::new(stdout);
                 let terminal = Terminal::new(backend)?;
-                let events = EventHandler::new(16);
+                let events = EventHandler::new(tick_rate);
                 let mut tui = Tui::new(terminal, events);
 
                 // Initialize TUI

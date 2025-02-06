@@ -54,8 +54,9 @@ pub fn gradient_line(
 }
 
 /// Checks if the terminal size is sufficient, otherwise shows a resize popup.
-pub fn check_terminal_size(frame: &mut Frame, required_height: usize, required_width: usize) -> bool {
+pub fn check_terminal_size(frame: &mut Frame, game: &str, required_height: usize, required_width: usize) -> bool {
     let terminal_size = frame.area();
+    let color = get_theme_color(game);
     if (terminal_size.height as usize) < required_height || (terminal_size.width as usize) < required_width {
         let popup = Paragraph::new("Please resize the terminal to view the full content.")
             .alignment(Alignment::Center)
@@ -65,7 +66,7 @@ pub fn check_terminal_size(frame: &mut Frame, required_height: usize, required_w
                 .title("Warning")
                 .title_position(Position::Top)
                 .title_alignment(Alignment::Center)
-                .style(Style::default().fg(Color::Magenta)));
+                .style(Style::default().fg(color)));
         
         let popup_layout = Layout::default()
             .direction(Direction::Vertical)
@@ -87,7 +88,7 @@ pub fn render(app: &mut App, frame: &mut Frame) {
             let required_height = required_logo_height + required_select_height + 35;
             let required_width = app.logo.lines().map(|line| line.len()).max().unwrap_or(0) + 10;
 
-            if !check_terminal_size(frame, required_height, required_width) {
+            if !check_terminal_size(frame, &app.game, required_height, required_width) {
                 return;
             }
 
