@@ -2,8 +2,9 @@ use tokio::sync::Mutex;
 use std::sync::Arc;
 use std::collections::HashMap;
 use tokio::task;
-use crate::overlay::create_overlay;
 use winapi::shared::windef::HWND;
+
+use crate::overlay::create_overlay;
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]
 pub enum ThreadType {

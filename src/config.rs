@@ -28,7 +28,7 @@ pub struct GameConfig {
 pub struct OverlayConfig {
     pub render: Vec<String>,
     pub crosshair_type: CrosshairType,
-    pub crosshair_size: u8,
+    pub crosshair_size: f32,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -130,7 +130,7 @@ pub fn create_default_game_config(game: &str) -> io::Result<()> {
                     "ActiveRadius".to_string(),
                 ],
                 crosshair_type: CrosshairType::Dot,
-                crosshair_size: 5,
+                crosshair_size: 5.0,
             },
             keybinds: KeybindConfig {
                 keyboard: HashMap::from([

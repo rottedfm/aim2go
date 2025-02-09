@@ -1,0 +1,21 @@
+app:
+  tick_rate: 8
+  theme: green
+  ascii_art: "\n                                ____      ,----,                      \n               ,--,           ,'  , `.  .'   .' \\                     \n             ,--.'|        ,-+-,.' _ |,----,'    |            ,---.  \n             |  |,      ,-+-. ;   , |||    :  .  ;,----._,.  '   ,'\\ \n   ,--.--.   `--'_     ,--.'|'   |  ||;    |.'  //   /  ' / /   /   |\n  /       \\  ,' ,'|   |   |  ,', |  |,`----'/  ;|   :     |.   ; ,. :\n .--.  .-. | '  | |   |   | /  | |--'   /  ;  / |   | .\\  .'   | |: :\n  \\__\\/: . . |  | :   |   : |  | ,     ;  /  /-,.   ; ';  |'   | .; :\n  ,\" .--.; | '  : |__ |   : |  |/     /  /  /.`|'   .   . ||   :    |\n /  /  ,.  | |  | '.'||   | |`-'    ./__;      : `---`-'| | \\   \\  / \n;  :   .'   \\;  :    ;|   ;/        |   :    .'  .'__/\\_: |  `----'  \n|  ,     .-./|  ,   / '---'         ;   | .'     |   :    :          \n `--`---'     ---`-'                `---'         \\   \\  /           \n                                                   `--`-'            "
+game:
+  overlay:
+    render:
+    - HUD
+    - Crosshair
+    - ESP
+    - ActiveRadius
+    crosshair_type: Dot
+    crosshair_size: 5
+  keybinds:
+    keyboard:
+      CTRL+SHIFT+ESC: Quit
+      CTRL+Q: ClassCaptureWheel
+      CTRL+ESC: CloseOverlay
+    mouse:
+      RMB: SnapAim
+      LMB: ClickCapture

@@ -16,6 +16,8 @@ clap = { version = "4.5.26", features = ["derive"] }
 cliclack = "0.3.5"
 console = { version = "0.15.10", features = ["windows-console-colors"] }
 crossterm = { version = "0.28.1", features = ["event-stream"] }
+eframe = "0.31.0"
+egui = "0.31.0"
 futures = "0.3.31"
 ratatui = "0.29.0"
 remove = "0.1.3"
